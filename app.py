@@ -2,7 +2,7 @@ from flask import Flask, render_template, session, redirect, url_for, flash
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, DecimalField
 from wtforms.validators import DataRequired
 
 app = Flask(__name__)
@@ -18,7 +18,9 @@ class NameForm(FlaskForm):
     submit = SubmitField('Submit')
 
 class DefaultsForm(FlaskForm):
-    commuteExpenses = StringField("Gas/Tolls:", validators=[DataRequired()])
+    household = DecimalField("Household:", validators=[DataRequired()])
+    eatOut = DecimalField("Eating Out", validators=[DataRequired()])
+    commute = DecimalField("Gas/Tolls:", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
 @app.errorhandler(404)
@@ -60,8 +62,8 @@ def defaults():
     form = DefaultsForm()
     if form.validate_on_submit():
         old_name = session.get('gas')
-        if old_name is not None and old_name != form.commuteExpenses.data:
+        if old_name is not None and old_name != form.commute.data:
             flash('Looks like you have Defaults cuck!')
-        session['gas'] = form.commuteExpenses.data
+        session['gas'] = form.commute.data
         return redirect(url_for('defaults'))
     return render_template('index.html', form=form, name=session.get('name'))
