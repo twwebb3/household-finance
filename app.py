@@ -1,16 +1,32 @@
-from flask import Flask, render_template, session, redirect, url_for, flash
+import os
+from flask import Flask, render_template, session, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, DecimalField
 from wtforms.validators import DataRequired
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hard to guess string'
+app.config['SQLALCHEMY_DATABASE_URI']=\
+    'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 bootstrap = Bootstrap(app)
 moment = Moment(app)
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
+
+# add db for defaults
+# need to figure out how to do it row wise
+# have two columns, one for expenditure type and one for allotted amount
+# db for logging expenditures will be necessary too
+# expenditure logs will have date, exp. type, and exp. amt fields at the very least
 
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
