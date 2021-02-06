@@ -3,7 +3,7 @@ from flask import Flask, render_template, session, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, DecimalField
+from wtforms import StringField, SubmitField, DecimalField, FieldList, FormField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -27,17 +27,28 @@ migrate = Migrate(app, db)
 # have two columns, one for expenditure type and one for allotted amount
 # db for logging expenditures will be necessary too
 # expenditure logs will have date, exp. type, and exp. amt fields at the very least
+# class Defaults(db.Model):
+#     __tablename__ = 'defaults'
+#     id = db.Column(db.Integer, primary_key=True)
+#     expenditureType = db.Column(db.String(64), unique=True)
+#     amount = db.Column(db.Float, unique=True)
+#
+#     def __repr__(self):
+#         return '<Defaults %r>' % self.expenditureType
+
 
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
     day = StringField('What is the date?', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
+class DefaultsEntryForm(FlaskForm):
+    expType = StringField("Expenditure Type:", validators=[DataRequired()])
+    amount = DecimalField("Monthly Allotment:", validators=[DataRequired()])
+
+# determine how to dynamically add forms to total form then load and submit data to db
 class DefaultsForm(FlaskForm):
-    household = DecimalField("Household:", validators=[DataRequired()])
-    eatOut = DecimalField("Eating Out", validators=[DataRequired()])
-    commute = DecimalField("Gas/Tolls:", validators=[DataRequired()])
-    submit = SubmitField("Submit")
+    expDefaults = FieldList(FormField(DefaultsEntryForm), min_entries=1)
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -54,8 +65,8 @@ def index():
     form = NameForm()
     if form.validate_on_submit():
         old_name = session.get('name')
-        if old_name is not None and old_name != form.name.data:
-            flash('Looks like you have changed your name!')
+        #if old_name is not None and old_name != form.name.data:
+            #flash('Looks like you have changed your name!')
         session['name'] = form.name.data
         return redirect(url_for('index'))
     return render_template('index.html', form=form, name=session.get('name'))
@@ -66,8 +77,8 @@ def analytics():
     form = NameForm()
     if form.validate_on_submit():
         old_name = session.get('name')
-        if old_name is not None and old_name != form.name.data:
-            flash('Looks like you have Analytics!')
+        #if old_name is not None and old_name != form.name.data:
+            #flash('Looks like you have Analytics!')
         session['name'] = form.name.data
         return redirect(url_for('analytics'))
     return render_template('index.html', form=form, name=session.get('name'))
@@ -78,8 +89,8 @@ def defaults():
     form = DefaultsForm()
     if form.validate_on_submit():
         old_name = session.get('gas')
-        if old_name is not None and old_name != form.commute.data:
-            flash('Looks like you have Defaults cuck!')
+        #if old_name is not None and old_name != form.commute.data:
+            #flash('Looks like you have Defaults cuck!')
         session['gas'] = form.commute.data
         return redirect(url_for('defaults'))
     return render_template('index.html', form=form, name=session.get('name'))
