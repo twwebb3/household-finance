@@ -3,7 +3,8 @@ from flask import Flask, render_template, session, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, DecimalField, FieldList, FormField
+from flask.ext.babel import gettext
+from wtforms import StringField, SubmitField, DecimalField, FieldList, FormField, SelectField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -36,6 +37,15 @@ migrate = Migrate(app, db)
 #     def __repr__(self):
 #         return '<Defaults %r>' % self.expenditureType
 
+class ExpenditureType(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    expType = db.Colum(db.String(64))
+    amount = db.relationship(lambda: ExpenditureAmount)
+
+class ExpenditureAmount(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    expTypeId = db.Column(db.Integer(), db.ForeignKey(ExpenditureType.id))
+    expenditureAmount = db.Column(db.Float())
 
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
@@ -43,8 +53,11 @@ class NameForm(FlaskForm):
     submit = SubmitField('Submit')
 
 class DefaultsEntryForm(FlaskForm):
-    expType = StringField("Expenditure Type:", validators=[DataRequired()])
+    expType = SelectField(gettext("Type"), choices=[(c, c) for c in ['Groceries/Household', 'Alcohol','EatingOut',
+                                                                     'Leisure','Gas','Personal Budget']])
     amount = DecimalField("Monthly Allotment:", validators=[DataRequired()])
+    def __init__(self, csrf_enabled=False, *args, **kwargs):
+        super(DefaultsEntryForm, self).__init__(csrf_enabled=False, *args, **kwargs)
 
 # determine how to dynamically add forms to total form then load and submit data to db
 class DefaultsForm(FlaskForm):
