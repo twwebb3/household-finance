@@ -1,10 +1,11 @@
 import os
-from flask import Flask, render_template, session, redirect, url_for
+from datetime import datetime
+from flask import Flask, flash, render_template, session, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
-from flask.ext.babel import gettext
-from wtforms import StringField, SubmitField, DecimalField, FieldList, FormField, SelectField
+# from flask.text.babel import gettext
+from wtforms import StringField, SubmitField, DecimalField, FieldList, FormField, DateField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -39,13 +40,17 @@ migrate = Migrate(app, db)
 
 class ExpenditureType(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
-    expType = db.Colum(db.String(64))
-    amount = db.relationship(lambda: ExpenditureAmount)
+    expenditure_type = db.Column(db.String(64), unique=True, index=True)
+    max_amount = db.relationship(lambda: ExpenditureAmount)
+    date_effective = db.Column(db.DateTime())
+    date_ineffective = db.Column(db.DateTime())
+
 
 class ExpenditureAmount(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
-    expTypeId = db.Column(db.Integer(), db.ForeignKey(ExpenditureType.id))
-    expenditureAmount = db.Column(db.Float())
+    expenditure_type_id = db.Column(db.Integer(), db.ForeignKey(ExpenditureType.id))
+    expenditure_date = db.Column(db.DateTime())
+    expenditure_amount = db.Column(db.Float())
 
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
@@ -53,11 +58,12 @@ class NameForm(FlaskForm):
     submit = SubmitField('Submit')
 
 class DefaultsEntryForm(FlaskForm):
-    expType = SelectField(gettext("Type"), choices=[(c, c) for c in ['Groceries/Household', 'Alcohol','EatingOut',
-                                                                     'Leisure','Gas','Personal Budget']])
+    expenditure_type = StringField('Expenditure Type:', validators=[DataRequired()])
     amount = DecimalField("Monthly Allotment:", validators=[DataRequired()])
-    def __init__(self, csrf_enabled=False, *args, **kwargs):
-        super(DefaultsEntryForm, self).__init__(csrf_enabled=False, *args, **kwargs)
+    date_effective = DateField("Date Effective: ", validators=[DataRequired()])
+    submit = SubmitField('Add')
+
+# add db references in forms
 
 # determine how to dynamically add forms to total form then load and submit data to db
 class DefaultsForm(FlaskForm):
@@ -99,11 +105,19 @@ def analytics():
 
 @app.route('/defaults', methods=['GET', 'POST'])
 def defaults():
-    form = DefaultsForm()
+    form = DefaultsEntryForm()
     if form.validate_on_submit():
-        old_name = session.get('gas')
+        expenditure_type = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first()
+        if expenditure_type is None:
+            expenditure_type = ExpenditureType(expenditure_type=form.expenditure_type.data)
+            db.session.add(expenditure_type)
+            db.session.commit()
+            session['known'] = False
+        else:
+            session['known'] = True
+            flash('That default already exists cuck!')
+        session['expenditure_type'] = form.expenditure_type.data
         #if old_name is not None and old_name != form.commute.data:
             #flash('Looks like you have Defaults cuck!')
-        session['gas'] = form.commute.data
         return redirect(url_for('defaults'))
-    return render_template('index.html', form=form, name=session.get('name'))
+    return render_template('index.html', form=form, expenditure_type=session.get('expenditure_type'))
