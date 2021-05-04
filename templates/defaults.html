@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}Household Finance{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Expenditure Defaults</h1>
+</div>
+{{ wtf.quick_form(form) }}
+  <div>
+    <h5>Expenditure type:</h5>
+    <select width="600px">
+    <option SELECTED value='0'>Choose default spending category</option>
+    {% for x in expenditure_type %}
+      <option value= '{{ x }}'>{{x}}</option>
+    {% endfor %}
+  </select>
+  <div>
+    <input type="submit">
+  </div>
+{% endblock %}
