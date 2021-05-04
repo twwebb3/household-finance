@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from flask import Flask, flash, render_template, session, redirect, url_for
+from flask import Flask, flash, render_template, session, redirect, url_for, jsonify
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
@@ -105,9 +105,16 @@ def analytics():
 
 @app.route('/defaults', methods=['GET', 'POST'])
 def defaults():
+    if 'expenditure_type' not in session:
+        session['expenditure_type'] = []
     form = DefaultsEntryForm()
     if form.validate_on_submit():
-        expenditure_type = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first()
+        expenditure_type = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data)
+        expenditure_type_list = session['expenditure_type']
+        for exp in expenditure_type:
+            if exp not in expenditure_type_list:
+                expenditure_type_list.append(expenditure_type)
+        session['expenditure_type'] = expenditure_type_list
         if expenditure_type is None:
             expenditure_type = ExpenditureType(expenditure_type=form.expenditure_type.data)
             db.session.add(expenditure_type)
@@ -116,8 +123,8 @@ def defaults():
         else:
             session['known'] = True
             flash('That default already exists cuck!')
-        session['expenditure_type'] = form.expenditure_type.data
+        # session['expenditure_type'] = jsonify(expenditure_type_list)
         #if old_name is not None and old_name != form.commute.data:
             #flash('Looks like you have Defaults cuck!')
         return redirect(url_for('defaults'))
-    return render_template('index.html', form=form, expenditure_type=session.get('expenditure_type'))
+    return render_template('defaults.html', form=form, expenditure_type=session.get('expenditure_type'))
