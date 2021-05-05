@@ -41,7 +41,7 @@ migrate = Migrate(app, db)
 class ExpenditureType(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     expenditure_type = db.Column(db.String(64), unique=True, index=True)
-    max_amount = db.relationship(lambda: ExpenditureAmount)
+    max_amount = db.Column(db.Float())
     date_effective = db.Column(db.DateTime())
     date_ineffective = db.Column(db.DateTime())
 
@@ -59,7 +59,7 @@ class NameForm(FlaskForm):
 
 class DefaultsEntryForm(FlaskForm):
     expenditure_type = StringField('Expenditure Type:', validators=[DataRequired()])
-    amount = DecimalField("Monthly Allotment:", validators=[DataRequired()])
+    max_amount = DecimalField("Monthly Allotment:", validators=[DataRequired()])
     date_effective = DateField("Date Effective: ", validators=[DataRequired()])
     submit = SubmitField('Add')
 
@@ -105,18 +105,27 @@ def analytics():
 
 @app.route('/defaults', methods=['GET', 'POST'])
 def defaults():
-    if 'expenditure_type' not in session:
-        session['expenditure_type'] = []
+    #if 'expenditure_type' not in session:
+    session['expenditure_type'] = []
     form = DefaultsEntryForm()
+    exp1 = ExpenditureType.query.all()
+    print(exp1)
+    #expenditure_type_list = [r[0] for r in ExpenditureType.query.all()]
+    #print(expenditure_type_list)
+    #session['expenditure_type_list'] = jsonify(expenditure_type_list.expenditure_type)
     if form.validate_on_submit():
-        expenditure_type = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data)
-        expenditure_type_list = session['expenditure_type']
-        for exp in expenditure_type:
-            if exp not in expenditure_type_list:
-                expenditure_type_list.append(expenditure_type)
-        session['expenditure_type'] = expenditure_type_list
+        expenditure_type = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first()
+        # expenditure_type_list = session['expenditure_type']
+        # for exp in expenditure_type:
+        #     if exp not in expenditure_type_list:
+        #         expenditure_type_list.append(expenditure_type)
+        # session['expenditure_type'] = expenditure_type_list
         if expenditure_type is None:
-            expenditure_type = ExpenditureType(expenditure_type=form.expenditure_type.data)
+            print(form.expenditure_type.data)
+            expenditure_type = ExpenditureType(expenditure_type=form.expenditure_type.data,
+                                               max_amount=form.max_amount.data,
+                                               date_effective=form.date_effective.data)
+            # print(form.expenditure_type.data)
             db.session.add(expenditure_type)
             db.session.commit()
             session['known'] = False
