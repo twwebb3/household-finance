@@ -109,12 +109,18 @@ def defaults():
     session['expenditure_type'] = []
     form = DefaultsEntryForm()
     exp1 = ExpenditureType.query.all()
-    print(exp1)
+    x = ExpenditureType.query.filter_by(expenditure_type='alcohol').values('max_amount')
+    print(x)
+    for i in x:
+        print(i)
+        out = i
+    print(out)
     #expenditure_type_list = [r[0] for r in ExpenditureType.query.all()]
     #print(expenditure_type_list)
     #session['expenditure_type_list'] = jsonify(expenditure_type_list.expenditure_type)
     if form.validate_on_submit():
         expenditure_type = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first()
+        print(ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first())
         # expenditure_type_list = session['expenditure_type']
         # for exp in expenditure_type:
         #     if exp not in expenditure_type_list:
@@ -136,4 +142,7 @@ def defaults():
         #if old_name is not None and old_name != form.commute.data:
             #flash('Looks like you have Defaults cuck!')
         return redirect(url_for('defaults'))
-    return render_template('defaults.html', form=form, expenditure_type=session.get('expenditure_type'))
+    return render_template('defaults.html',
+                           form=form,
+                           expenditure_type=['GAS','ACLOHOL'],
+                           expenditure_amount=out)
