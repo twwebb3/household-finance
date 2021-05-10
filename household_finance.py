@@ -5,7 +5,7 @@ from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
 # from flask.text.babel import gettext
-from wtforms import StringField, SubmitField, DecimalField, FieldList, FormField, DateField
+from wtforms import StringField, SubmitField, DecimalField, FieldList, FormField, DateField, SelectField, IntegerField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -45,12 +45,18 @@ class ExpenditureType(db.Model):
     date_effective = db.Column(db.DateTime())
     date_ineffective = db.Column(db.DateTime())
 
+    def __repr__(self):
+        return '<ExpenditureType %r>' % self.expenditure_type
+
 
 class ExpenditureAmount(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     expenditure_type_id = db.Column(db.Integer(), db.ForeignKey(ExpenditureType.id))
     expenditure_date = db.Column(db.DateTime())
     expenditure_amount = db.Column(db.Float())
+
+    def __repr__(self):
+        return '<ExpenditureAmount %r>' % self.expenditure_amount
 
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
@@ -62,6 +68,18 @@ class DefaultsEntryForm(FlaskForm):
     max_amount = DecimalField("Monthly Allotment:", validators=[DataRequired()])
     date_effective = DateField("Date Effective: ", validators=[DataRequired()])
     submit = SubmitField('Add')
+
+# class DefaultsViewingForm(FlaskForm):
+#     expenditure_type = SelectField('Expenditure Type', choices=[])
+#     submit = SubmitField('Submit')
+
+class ExpenditureEntryForm(FlaskForm):
+    type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
+    description = StringField('Description:', validators=[DataRequired()])
+    amount = DecimalField('Amount:', validators=[DataRequired()])
+    month = IntegerField('Month:', validators=[DataRequired()], default=datetime.now().month)
+    year = IntegerField('Year:', validators=[DataRequired()], default=datetime.now().year)
+    submit = SubmitField('Submit')
 
 # add db references in forms
 
@@ -81,7 +99,7 @@ def internal_server_error(e):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    form = NameForm()
+    form = ExpenditureEntryForm()
     if form.validate_on_submit():
         old_name = session.get('name')
         #if old_name is not None and old_name != form.name.data:
@@ -108,13 +126,23 @@ def defaults():
     #if 'expenditure_type' not in session:
     session['expenditure_type'] = []
     form = DefaultsEntryForm()
-    exp1 = ExpenditureType.query.all()
+    form2 = DefaultsViewingForm()
+    exp1 = ExpenditureType.query.with_entities(ExpenditureType.expenditure_type)
     x = ExpenditureType.query.filter_by(expenditure_type='alcohol').values('max_amount')
+    print(exp1)
+    print(type(exp1))
+    exp_type = []
+    for j in exp1:
+        temp = j._asdict()
+        exp_type.append(temp['expenditure_type'])
     print(x)
+    print(exp_type)
     for i in x:
         print(i)
-        out = i
+        out = i._asdict()
+    out = out['max_amount']
     print(out)
+    print(type(out))
     #expenditure_type_list = [r[0] for r in ExpenditureType.query.all()]
     #print(expenditure_type_list)
     #session['expenditure_type_list'] = jsonify(expenditure_type_list.expenditure_type)
@@ -144,5 +172,5 @@ def defaults():
         return redirect(url_for('defaults'))
     return render_template('defaults.html',
                            form=form,
-                           expenditure_type=['GAS','ACLOHOL'],
+                           expenditure_type=exp_type,
                            expenditure_amount=out)
