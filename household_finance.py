@@ -51,9 +51,14 @@ class ExpenditureType(db.Model):
 
 class ExpenditureAmount(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
-    expenditure_type_id = db.Column(db.Integer(), db.ForeignKey(ExpenditureType.id))
-    expenditure_date = db.Column(db.DateTime())
-    expenditure_amount = db.Column(db.Float())
+    type_id = db.Column(db.Integer(), db.ForeignKey(ExpenditureType.id))
+    type = db.Column(db.String(64))
+    store = db.Column(db.String(64))
+    description = db.Column(db.String(200))
+    amount = db.Column(db.Float())
+    year = db.Column(db.Integer())
+    month = db.Column(db.Integer())
+    day = db.Column(db.Integer())
 
     def __repr__(self):
         return '<ExpenditureAmount %r>' % self.expenditure_amount
@@ -61,6 +66,10 @@ class ExpenditureAmount(db.Model):
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
     day = StringField('What is the date?', validators=[DataRequired()])
+    submit = SubmitField('Submit')
+
+class BudgetRemainingForm(FlaskForm):
+    expenditure_type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
     submit = SubmitField('Submit')
 
 class DefaultsEntryForm(FlaskForm):
@@ -75,10 +84,12 @@ class DefaultsEntryForm(FlaskForm):
 
 class ExpenditureEntryForm(FlaskForm):
     type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
+    store = StringField('Store:', validators=[DataRequired()])
     description = StringField('Description:', validators=[DataRequired()])
     amount = DecimalField('Amount:', validators=[DataRequired()])
-    month = IntegerField('Month:', validators=[DataRequired()], default=datetime.now().month)
     year = IntegerField('Year:', validators=[DataRequired()], default=datetime.now().year)
+    month = IntegerField('Month:', validators=[DataRequired()], default=datetime.now().month)
+    day = IntegerField('Day:', validators=[DataRequired()], default=datetime.now().day)
     submit = SubmitField('Submit')
 
 # add db references in forms
@@ -99,14 +110,38 @@ def internal_server_error(e):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    form = BudgetRemainingForm()
+    amount=''
+    if form.validate_on_submit():
+        budget = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).values('max_amount')
+        exp = ExpenditureAmount.query.filter_by(type=form.expenditure_type.data,
+                                                year=datetime.now().year,
+                                                month=datetime.now().month).values('amount')
+        for i in budget:
+            budget_amt = i._asdict()
+        budget_amt = budget_amt['max_amount']
+        for i in exp:
+            exp_amt = i._asdict()
+        exp_amt = exp_amt['amount']
+
+        amount = budget_amt - exp_amt
+    return render_template('index.html', form=form, amount=amount)
+
+
+@app.route('/expenditure_entry', methods=['GET', 'POST'])
+def entry():
     form = ExpenditureEntryForm()
     if form.validate_on_submit():
-        old_name = session.get('name')
-        #if old_name is not None and old_name != form.name.data:
-            #flash('Looks like you have changed your name!')
-        session['name'] = form.name.data
-        return redirect(url_for('index'))
-    return render_template('index.html', form=form, name=session.get('name'))
+        expenditure_amount = ExpenditureAmount(type=form.type.data,
+                                               store=form.store.data,
+                                               description=form.description.data,
+                                               amount=form.amount.data,
+                                               year=form.year.data,
+                                               month=form.month.data,
+                                               day=form.day.data)
+        db.session.add(expenditure_amount)
+        db.session.commit()
+    return(render_template('index.html', form=form, name=session.get('name')))
 
 
 @app.route('/analytics', methods=['GET', 'POST'])
@@ -115,10 +150,9 @@ def analytics():
     if form.validate_on_submit():
         old_name = session.get('name')
         #if old_name is not None and old_name != form.name.data:
-            #flash('Looks like you have Analytics!')
         session['name'] = form.name.data
         return redirect(url_for('analytics'))
-    return render_template('index.html', form=form, name=session.get('name'))
+    return render_template('index.html', form=form, name=session.get('name'), amount=amount)
 
 
 @app.route('/defaults', methods=['GET', 'POST'])
@@ -126,7 +160,7 @@ def defaults():
     #if 'expenditure_type' not in session:
     session['expenditure_type'] = []
     form = DefaultsEntryForm()
-    form2 = DefaultsViewingForm()
+    #form2 = DefaultsViewingForm()
     exp1 = ExpenditureType.query.with_entities(ExpenditureType.expenditure_type)
     x = ExpenditureType.query.filter_by(expenditure_type='alcohol').values('max_amount')
     print(exp1)
