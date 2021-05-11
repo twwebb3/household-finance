@@ -8,4 +8,7 @@
     <h1>Hello, {% if name %}{{ name }}{% else %}Stranger{% endif %}!</h1>
 </div>
 {{ wtf.quick_form(form) }}
+<div>
+    <h5>{% if amount %}{{ amount }}{% else %}{% endif %}</h5>
+</div>
 {% endblock %}
