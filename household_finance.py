@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 from datetime import datetime
 from flask import Flask, flash, render_template, session, redirect, url_for, jsonify
 from flask_bootstrap import Bootstrap
@@ -125,7 +126,10 @@ def index():
         exp_amt = exp_amt['amount']
 
         amount = budget_amt - exp_amt
-    return render_template('index.html', form=form, amount=amount)
+
+    sample_table = pd.DataFrame({'cool':[1,2,3],'not cool':['a','b','abc']})
+
+    return render_template('index.html', form=form, amount=amount, tables=[sample_table.to_html(classes='data')], titles=sample_table.columns.values)
 
 
 @app.route('/expenditure_entry', methods=['GET', 'POST'])
