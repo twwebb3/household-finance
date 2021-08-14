@@ -11,6 +11,8 @@ from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
+from data import db_query
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
@@ -113,17 +115,15 @@ def internal_server_error(e):
 def index():
     form = BudgetRemainingForm()
     amount=''
+    output_table = pd.DataFrame({})
     if form.validate_on_submit():
-        budget = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).values('max_amount')
+        budget = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data)
         exp = ExpenditureAmount.query.filter_by(type=form.expenditure_type.data,
                                                 year=datetime.now().year,
-                                                month=datetime.now().month).values('amount')
-        for i in budget:
-            budget_amt = i._asdict()
-        budget_amt = budget_amt['max_amount']
-        for i in exp:
-            exp_amt = i._asdict()
-        exp_amt = exp_amt['amount']
+                                                month=datetime.now().month)
+
+        budget_amt = db_query.extract(budget, 'max_amount')
+        exp_amt = db_query.extract(exp, 'amount')
 
         amount = budget_amt - exp_amt
 
