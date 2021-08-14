@@ -115,7 +115,7 @@ def internal_server_error(e):
 def index():
     form = BudgetRemainingForm()
     amount=''
-    output_table = pd.DataFrame({})
+    exp_hist_df = pd.DataFrame({})
     if form.validate_on_submit():
         budget = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data)
         exp = ExpenditureAmount.query.filter_by(type=form.expenditure_type.data,
@@ -125,11 +125,16 @@ def index():
         budget_amt = db_query.extract(budget, 'max_amount')
         exp_amt = db_query.extract(exp, 'amount')
 
+        exp_hist_df = db_query.extract_expenditure_history(ExpenditureAmount = ExpenditureAmount,
+                                                           type = form.expenditure_type.data,
+                                                           year = datetime.now().year,
+                                                           month = 4)
+
         amount = budget_amt - exp_amt
 
     sample_table = pd.DataFrame({'cool':[1,2,3],'not cool':['a','b','abc']})
 
-    return render_template('index.html', form=form, amount=amount, tables=[sample_table.to_html(classes='data')], titles=sample_table.columns.values)
+    return render_template('index.html', form=form, amount=amount, tables=[exp_hist_df.to_html(classes='data')], titles=sample_table.columns.values)
 
 
 @app.route('/expenditure_entry', methods=['GET', 'POST'])
