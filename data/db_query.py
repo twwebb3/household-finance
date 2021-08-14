@@ -26,12 +26,15 @@ def extract_list(generator, value):
     return output
 
 
-def extract_expenditure_history(generator):
+def extract_expenditure_history(ExpenditureAmount, type, year, month):
     import pandas as pd
 
-    type = extract_list(generator,'type')
-    description = extract_list(generator, 'description')
-    amount = extract_list(generator, 'amount')
+    exp = ExpenditureAmount.query.filter_by(type=type,
+                                            year=year).filter(ExpenditureAmount.month >= month)
+
+    type = extract_list(exp,'type')
+    description = extract_list(exp, 'description')
+    amount = extract_list(exp, 'amount')
 
     df = pd.DataFrame({'type': type,
                        'description': description,
