@@ -35,10 +35,30 @@ def extract_expenditure_history(ExpenditureAmount, type, year, month):
     type = extract_list(exp,'type')
     description = extract_list(exp, 'description')
     amount = extract_list(exp, 'amount')
+    year = extract_list(exp, 'year')
+    month = extract_list(exp, 'month')
+    day = extract_list(exp, 'day')
 
     df = pd.DataFrame({'type': type,
                        'description': description,
-                       'amount': amount})
+                       'amount': amount,
+                       'year': year,
+                       'month': month,
+                       'day': day})
 
     return df
 
+
+def budget_remaining(ExpenditureType, ExpenditureAmount, type):
+    """
+    calculates budget remaining for different budget items.
+    """
+    budget = ExpenditureType.filter_by(expenditure_type=type)
+    budget_amt = extract(budget, 'max_amount')
+    if type in ('Mallory Personal Budget', 'TW Personal Budget'):
+        exp_hist_df = extract_expenditure_history(ExpenditureAmount=ExpenditureAmount,
+                                                  type=type,
+                                                  year=2020,
+                                                  month=9)
+
+    return 0
