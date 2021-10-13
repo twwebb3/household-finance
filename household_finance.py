@@ -117,20 +117,34 @@ def index():
     amount=''
     exp_hist_df = pd.DataFrame({})
     if form.validate_on_submit():
-        budget = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data)
-        exp = ExpenditureAmount.query.filter_by(type=form.expenditure_type.data,
-                                                year=datetime.now().year,
-                                                month=datetime.now().month)
+        exp_hist_df = db_query.extract_expenditure_history(ExpenditureAmount = ExpenditureAmount,
+                                                           type = form.expenditure_type.data,
+                                                           year = datetime.now().year,
+                                                           month = datetime.now().month)
 
-        budget_amt = db_query.extract(budget, 'max_amount')
-        exp_amt = db_query.extract(exp, 'amount')
+        amount = db_query.budget_remaining(ExpenditureType=ExpenditureType,
+                                           ExpenditureAmount=ExpenditureAmount,
+                                           type=form.expenditure_type.data)
 
+    sample_table = pd.DataFrame({'cool':[1,2,3],'not cool':['a','b','abc']})
+
+    return render_template('index.html', form=form, amount=amount, tables=[exp_hist_df.to_html(classes='data')], titles=sample_table.columns.values)
+
+
+@app.route('/expenditure_history', methods=['GET', 'POST'])
+def history():
+    form = BudgetRemainingForm()
+    amount=''
+    exp_hist_df = pd.DataFrame({})
+    if form.validate_on_submit():
         exp_hist_df = db_query.extract_expenditure_history(ExpenditureAmount = ExpenditureAmount,
                                                            type = form.expenditure_type.data,
                                                            year = datetime.now().year,
                                                            month = 4)
 
-        amount = budget_amt - exp_amt
+        amount = db_query.budget_remaining(ExpenditureType=ExpenditureType,
+                                           ExpenditureAmount=ExpenditureAmount,
+                                           type=form.expenditure_type.data)
 
     sample_table = pd.DataFrame({'cool':[1,2,3],'not cool':['a','b','abc']})
 
@@ -171,7 +185,7 @@ def defaults():
     form = DefaultsEntryForm()
     #form2 = DefaultsViewingForm()
     exp1 = ExpenditureType.query.with_entities(ExpenditureType.expenditure_type)
-    x = ExpenditureType.query.filter_by(expenditure_type='alcohol').values('max_amount')
+    x = ExpenditureType.query.filter_by(expenditure_type='Mallory Personal Budget').values('max_amount')
     print(exp1)
     print(type(exp1))
     exp_type = []
