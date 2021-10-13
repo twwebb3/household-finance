@@ -29,8 +29,9 @@ def extract_list(generator, value):
 def extract_expenditure_history(ExpenditureAmount, type, year, month):
     import pandas as pd
 
-    exp = ExpenditureAmount.query.filter_by(type=type,
-                                            year=year).filter(ExpenditureAmount.month >= month)
+    exp = ExpenditureAmount.query.filter_by(type=type).filter(ExpenditureAmount.year >= year,
+                                                              ExpenditureAmount.month >= month)
+    # duh this wont work have to make a full date column
 
     type = extract_list(exp,'type')
     description = extract_list(exp, 'description')
@@ -53,12 +54,29 @@ def budget_remaining(ExpenditureType, ExpenditureAmount, type):
     """
     calculates budget remaining for different budget items.
     """
-    budget = ExpenditureType.filter_by(expenditure_type=type)
+    from datetime import datetime
+
+    start_date = datetime(2020, 9, 1)
+    end_date = datetime.now()
+    num_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
+
+    budget = ExpenditureType.query.filter_by(expenditure_type=type)
     budget_amt = extract(budget, 'max_amount')
     if type in ('Mallory Personal Budget', 'TW Personal Budget'):
         exp_hist_df = extract_expenditure_history(ExpenditureAmount=ExpenditureAmount,
                                                   type=type,
                                                   year=2020,
-                                                  month=9)
+                                                  month=0)
 
-    return 0
+        exp_amount = exp_hist_df.amount.sum()
+        budget_amt = budget_amt * num_months
+    else:
+        exp = ExpenditureAmount.query.filter_by(type=type,
+                                                year=datetime.now().year,
+                                                month=datetime.now().month)
+
+        exp_amount = extract(exp, 'amount')
+
+    amount = budget_amt - exp_amount
+
+    return amount
