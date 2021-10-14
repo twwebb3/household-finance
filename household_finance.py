@@ -66,20 +66,23 @@ class ExpenditureAmount(db.Model):
     def __repr__(self):
         return '<ExpenditureAmount %r>' % self.expenditure_amount
 
+
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
     day = StringField('What is the date?', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
+
 class BudgetRemainingForm(FlaskForm):
     expenditure_type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
     year = SelectField('Year:',
-                       choices=[year for year in range(datetime.now().year-1,datetime.now().year+2)],
+                       choices=[year for year in range(datetime.now().year-1, datetime.now().year+2)],
                        default=datetime.now().year)
     month = SelectField('Month:',
                         choices=[month for month in range(1, 13)],
                         default=datetime.now().month)
     submit = SubmitField('Submit')
+
 
 class DefaultsEntryForm(FlaskForm):
     expenditure_type = StringField('Expenditure Type:', validators=[DataRequired()])
@@ -90,6 +93,7 @@ class DefaultsEntryForm(FlaskForm):
 # class DefaultsViewingForm(FlaskForm):
 #     expenditure_type = SelectField('Expenditure Type', choices=[])
 #     submit = SubmitField('Submit')
+
 
 class ExpenditureEntryForm(FlaskForm):
     type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
@@ -103,9 +107,10 @@ class ExpenditureEntryForm(FlaskForm):
 
 # add db references in forms
 
-# determine how to dynamically add forms to total form then load and submit data to db
+
 class DefaultsForm(FlaskForm):
     expDefaults = FieldList(FormField(DefaultsEntryForm), min_entries=1)
+
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -129,21 +134,25 @@ def index():
 
     form.expenditure_type.choices = exp_type
 
-    amount=''
+    amount = ''
     exp_hist_df = pd.DataFrame({})
     if form.validate_on_submit():
-        exp_hist_df = db_query.extract_expenditure_history(ExpenditureAmount = ExpenditureAmount,
-                                                           type = form.expenditure_type.data,
-                                                           year = datetime.now().year,
-                                                           month = datetime.now().month)
+        exp_hist_df = db_query.extract_expenditure_history(ExpenditureAmount=ExpenditureAmount,
+                                                           type=form.expenditure_type.data,
+                                                           year=datetime.now().year,
+                                                           month=datetime.now().month)
 
         amount = db_query.budget_remaining(ExpenditureType=ExpenditureType,
                                            ExpenditureAmount=ExpenditureAmount,
                                            type=form.expenditure_type.data)
 
-    sample_table = pd.DataFrame({'cool':[1,2,3],'not cool':['a','b','abc']})
+    sample_table = pd.DataFrame({'cool': [1, 2, 3], 'not cool': ['a', 'b', 'abc']})
 
-    return render_template('index.html', form=form, amount=amount, tables=[exp_hist_df.to_html(classes='data')], titles=sample_table.columns.values)
+    return render_template('index.html',
+                           form=form,
+                           amount=amount,
+                           tables=[exp_hist_df.to_html(classes='data')],
+                           titles=sample_table.columns.values)
 
 
 @app.route('/expenditure_history', methods=['GET', 'POST'])
@@ -161,9 +170,13 @@ def history():
                                            ExpenditureAmount=ExpenditureAmount,
                                            type=form.expenditure_type.data)
 
-    sample_table = pd.DataFrame({'cool':[1,2,3],'not cool':['a','b','abc']})
+    sample_table = pd.DataFrame({'cool': [1, 2, 3], 'not cool': ['a', 'b', 'abc']})
 
-    return render_template('index.html', form=form, amount=amount, tables=[exp_hist_df.to_html(classes='data')], titles=sample_table.columns.values)
+    return render_template('index.html',
+                           form=form,
+                           amount=amount,
+                           tables=[exp_hist_df.to_html(classes='data')],
+                           titles=sample_table.columns.values)
 
 
 @app.route('/expenditure_entry', methods=['GET', 'POST'])
@@ -179,7 +192,7 @@ def entry():
                                                day=form.day.data)
         db.session.add(expenditure_amount)
         db.session.commit()
-    return(render_template('index.html', form=form, name=session.get('name')))
+    return render_template('index.html', form=form, name=session.get('name'))
 
 
 @app.route('/analytics', methods=['GET', 'POST'])
@@ -187,18 +200,18 @@ def analytics():
     form = NameForm()
     if form.validate_on_submit():
         old_name = session.get('name')
-        #if old_name is not None and old_name != form.name.data:
+        # if old_name is not None and old_name != form.name.data:
         session['name'] = form.name.data
         return redirect(url_for('analytics'))
-    return render_template('index.html', form=form, name=session.get('name'), amount=amount)
+    return render_template('index.html', form=form, name=session.get('name'), amount=0)
 
 
 @app.route('/defaults', methods=['GET', 'POST'])
 def defaults():
-    #if 'expenditure_type' not in session:
+    # if 'expenditure_type' not in session:
     session['expenditure_type'] = []
     form = DefaultsEntryForm()
-    #form2 = DefaultsViewingForm()
+    # form2 = DefaultsViewingForm()
     exp1 = ExpenditureType.query.with_entities(ExpenditureType.expenditure_type)
     x = ExpenditureType.query.filter_by(expenditure_type='Mallory Personal Budget').values('max_amount')
     print(exp1)
@@ -215,9 +228,9 @@ def defaults():
     out = out['max_amount']
     print(out)
     print(type(out))
-    #expenditure_type_list = [r[0] for r in ExpenditureType.query.all()]
-    #print(expenditure_type_list)
-    #session['expenditure_type_list'] = jsonify(expenditure_type_list.expenditure_type)
+    # expenditure_type_list = [r[0] for r in ExpenditureType.query.all()]
+    # print(expenditure_type_list)
+    # session['expenditure_type_list'] = jsonify(expenditure_type_list.expenditure_type)
     if form.validate_on_submit():
         expenditure_type = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first()
         print(ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first())
@@ -239,8 +252,8 @@ def defaults():
             session['known'] = True
             flash('That default already exists cuck!')
         # session['expenditure_type'] = jsonify(expenditure_type_list)
-        #if old_name is not None and old_name != form.commute.data:
-            #flash('Looks like you have Defaults cuck!')
+        # if old_name is not None and old_name != form.commute.data:
+            # flash('Looks like you have Defaults cuck!')
         return redirect(url_for('defaults'))
     return render_template('defaults.html',
                            form=form,
