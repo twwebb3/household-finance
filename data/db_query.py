@@ -29,8 +29,8 @@ def extract_list(generator, value):
 def extract_expenditure_history(ExpenditureAmount, type, year, month):
     import pandas as pd
 
-    exp = ExpenditureAmount.query.filter_by(type=type).filter(ExpenditureAmount.year >= year,
-                                                              ExpenditureAmount.month >= month)
+    exp = ExpenditureAmount.query.filter_by(type=type).filter(ExpenditureAmount.year == year,
+                                                              ExpenditureAmount.month == month)
     # duh this wont work have to make a full date column
 
     type = extract_list(exp,'type')
