@@ -75,6 +75,11 @@ class NameForm(FlaskForm):
 
 class BudgetRemainingForm(FlaskForm):
     expenditure_type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
+    submit = SubmitField('Submit')
+
+
+class BudgetHistoricRemainingForm(FlaskForm):
+    expenditure_type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
     year = SelectField('Year:',
                        choices=[year for year in range(datetime.now().year-1, datetime.now().year+2)],
                        default=datetime.now().year)
@@ -90,9 +95,10 @@ class DefaultsEntryForm(FlaskForm):
     date_effective = DateField("Date Effective: ", validators=[DataRequired()])
     submit = SubmitField('Add')
 
-# class DefaultsViewingForm(FlaskForm):
-#     expenditure_type = SelectField('Expenditure Type', choices=[])
-#     submit = SubmitField('Submit')
+
+class DefaultsViewingForm(FlaskForm):
+    expenditure_type = SelectField('Expenditure Type', choices=[])
+    submit = SubmitField('Submit')
 
 
 class ExpenditureEntryForm(FlaskForm):
@@ -157,14 +163,23 @@ def index():
 
 @app.route('/expenditure_history', methods=['GET', 'POST'])
 def history():
-    form = BudgetRemainingForm()
+    form = BudgetHistoricRemainingForm()
+
+    exp1 = ExpenditureType.query.with_entities(ExpenditureType.expenditure_type)
+    exp_type = []
+    for j in exp1:
+        temp = j._asdict()
+        exp_type.append(temp['expenditure_type'])
+
+    form.expenditure_type.choices = exp_type
+
     amount=''
     exp_hist_df = pd.DataFrame({})
     if form.validate_on_submit():
         exp_hist_df = db_query.extract_expenditure_history(ExpenditureAmount = ExpenditureAmount,
                                                            type = form.expenditure_type.data,
-                                                           year = datetime.now().year,
-                                                           month = 4)
+                                                           year = form.year.data,
+                                                           month = form.month.data)
 
         amount = db_query.budget_remaining(ExpenditureType=ExpenditureType,
                                            ExpenditureAmount=ExpenditureAmount,
@@ -211,26 +226,18 @@ def defaults():
     # if 'expenditure_type' not in session:
     session['expenditure_type'] = []
     form = DefaultsEntryForm()
-    # form2 = DefaultsViewingForm()
+    form2 = DefaultsViewingForm()
+
+    amount = ''
+
     exp1 = ExpenditureType.query.with_entities(ExpenditureType.expenditure_type)
-    x = ExpenditureType.query.filter_by(expenditure_type='Mallory Personal Budget').values('max_amount')
-    print(exp1)
-    print(type(exp1))
     exp_type = []
     for j in exp1:
         temp = j._asdict()
         exp_type.append(temp['expenditure_type'])
-    print(x)
-    print(exp_type)
-    for i in x:
-        print(i)
-        out = i._asdict()
-    out = out['max_amount']
-    print(out)
-    print(type(out))
-    # expenditure_type_list = [r[0] for r in ExpenditureType.query.all()]
-    # print(expenditure_type_list)
-    # session['expenditure_type_list'] = jsonify(expenditure_type_list.expenditure_type)
+
+    form2.expenditure_type.choices = exp_type
+
     if form.validate_on_submit():
         expenditure_type = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first()
         print(ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first())
@@ -255,7 +262,20 @@ def defaults():
         # if old_name is not None and old_name != form.commute.data:
             # flash('Looks like you have Defaults cuck!')
         return redirect(url_for('defaults'))
+
+    if form2.validate_on_submit():
+        exp1 = ExpenditureType.query.with_entities(ExpenditureType.expenditure_type)
+        max_amount = []
+        for j in exp1:
+            temp = j._asdict()
+            max_amount = temp['max_amount']
+
+        amount = max_amount
+
+        return redirect(url_for('defaults'))
+
+
     return render_template('defaults.html',
                            form=form,
-                           expenditure_type=exp_type,
-                           expenditure_amount=out)
+                           form2=form2,
+                           expenditure_amount=amount)
