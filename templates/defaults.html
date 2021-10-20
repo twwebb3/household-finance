@@ -8,18 +8,9 @@
     <h1>Expenditure Defaults</h1>
 </div>
 {{ wtf.quick_form(form) }}
-  <div>
-    <h5>Expenditure type:</h5>
-    <select width="600px">
-    <option SELECTED value='0'>Choose default spending category</option>
-    {% for x in expenditure_type %}
-      <option value= '{{ x }}'>{{x}}</option>
-    {% endfor %}
+{{ wtf.quick_form(form2) }}
   </select>
-  <div>
-    <input type="submit">
-  </div>
     <div>
-      <h3>{{expenditure_amount}}</h3>
+      <h3>{% if expenditure_amount %}{{ expenditure_amount }}{% else %}{% endif %}</h3>
     </div>
 {% endblock %}
