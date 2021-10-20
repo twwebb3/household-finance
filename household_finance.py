@@ -264,10 +264,12 @@ def defaults():
         return redirect(url_for('defaults'))
 
     if form2.validate_on_submit():
-        exp1 = ExpenditureType.query.with_entities(ExpenditureType.expenditure_type)
-        max_amount = []
+        exp1 = ExpenditureType.query.filter_by(expenditure_type=form2.expenditure_type.data).first()
+        max_amount = 0
         for j in exp1:
+            print(j)
             temp = j._asdict()
+            print(temp)
             max_amount = temp['max_amount']
 
         amount = max_amount
