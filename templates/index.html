@@ -5,16 +5,15 @@
 
 {% block page_content %}
 <div class="page-header">
-    <h1>Hello!</h1>
+    <h1>{{ page_header }}</h1>
 </div>
 {{ wtf.quick_form(form) }}
 <div>
-    <h5>{% if amount %}{{ amount }}{% else %}{% endif %}</h5>
+    <h5>{% if amount %}Monthly Amount Remaining: {{ amount }}{% else %}{% endif %}</h5>
 </div>
 <div>
-    <h2>table</h2>
+    <h2>{% if table_name %}{{ table_name }}{% else %}{% endif %}</h2>
     {% for table in tables %}
-        {{titles[loop.index]}}
         {{ table|safe }}
     {% endfor %}
 </div>
