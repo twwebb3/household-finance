@@ -7,10 +7,14 @@
 <div class="page-header">
     <h1>Expenditure Defaults</h1>
 </div>
+<h3>Create Defaults</h3>
 {{ wtf.quick_form(form) }}
+<h3>View Defaults</h3>
 {{ wtf.quick_form(form2) }}
   </select>
     <div>
       <h3>{% if expenditure_amount %}{{ expenditure_amount }}{% else %}{% endif %}</h3>
     </div>
+<h3>Delete Defaults</h3>
+{{ wtf.quick_form(form3) }}
 {% endblock %}
