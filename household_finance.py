@@ -157,8 +157,7 @@ def index():
     return render_template('index.html',
                            form=form,
                            amount=amount,
-                           tables=[exp_hist_df.to_html(classes='data')],
-                           titles=sample_table.columns.values)
+                           tables=[exp_hist_df.to_html(classes='data')])
 
 
 @app.route('/expenditure_history', methods=['GET', 'POST'])
@@ -188,8 +187,10 @@ def history():
     sample_table = pd.DataFrame({'cool': [1, 2, 3], 'not cool': ['a', 'b', 'abc']})
 
     return render_template('index.html',
+                           page_header="Expenditure History",
                            form=form,
                            amount=amount,
+                           table_name="Historic Expenditures",
                            tables=[exp_hist_df.to_html(classes='data')],
                            titles=sample_table.columns.values)
 
@@ -197,6 +198,15 @@ def history():
 @app.route('/expenditure_entry', methods=['GET', 'POST'])
 def entry():
     form = ExpenditureEntryForm()
+
+    exp1 = ExpenditureType.query.with_entities(ExpenditureType.expenditure_type)
+    exp_type = []
+    for j in exp1:
+        temp = j._asdict()
+        exp_type.append(temp['expenditure_type'])
+
+    form.type.choices = exp_type
+
     if form.validate_on_submit():
         expenditure_amount = ExpenditureAmount(type=form.type.data,
                                                store=form.store.data,
@@ -207,7 +217,10 @@ def entry():
                                                day=form.day.data)
         db.session.add(expenditure_amount)
         db.session.commit()
-    return render_template('index.html', form=form, name=session.get('name'))
+    return render_template('index.html',
+                           page_header="Expenditure Entry",
+                           form=form,
+                           name=session.get('name'))
 
 
 @app.route('/analytics', methods=['GET', 'POST'])
@@ -227,6 +240,7 @@ def defaults():
     session['expenditure_type'] = []
     form = DefaultsEntryForm()
     form2 = DefaultsViewingForm()
+    form3 = DefaultsViewingForm()
 
     amount = ''
 
@@ -237,6 +251,7 @@ def defaults():
         exp_type.append(temp['expenditure_type'])
 
     form2.expenditure_type.choices = exp_type
+    form3.expenditure_type.choices = exp_type
 
     if form.validate_on_submit():
         expenditure_type = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first()
@@ -274,9 +289,15 @@ def defaults():
 
         amount = max_amount
 
+    if form3.validate_on_submit():
+        exp_type = form3.expenditure_type.data
 
+        ExpenditureType.query.filter_by(expenditure_type=exp_type).delete()
+
+        db.session.commit()
 
     return render_template('defaults.html',
                            form=form,
                            form2=form2,
+                           form3=form3,
                            expenditure_amount=amount)
