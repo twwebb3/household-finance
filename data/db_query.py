@@ -1,8 +1,11 @@
 
 
+from sqlalchemy.sql import text
+
+
 def extract(generator, values):
     output = 0
-    for i in generator.values(values):
+    for i in generator.values(text(values)):
         value_dict = i._asdict()
         try:
             output += value_dict[values]
@@ -16,7 +19,7 @@ def extract(generator, values):
 
 def extract_list(generator, value):
     output = []
-    for i in generator.values(value):
+    for i in generator.values(text(value)):
         value_dict = i._asdict()
         try:
             output.append(value_dict[value])
