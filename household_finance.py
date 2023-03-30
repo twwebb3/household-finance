@@ -64,7 +64,7 @@ class ExpenditureAmount(db.Model):
     day = db.Column(db.Integer())
 
     def __repr__(self):
-        return '<ExpenditureAmount %r>' % self.expenditure_amount
+        return '<ExpenditureAmount %r>' % self.amount
 
 
 class NameForm(FlaskForm):
@@ -93,12 +93,17 @@ class DefaultsEntryForm(FlaskForm):
     expenditure_type = StringField('Expenditure Type:', validators=[DataRequired()])
     max_amount = DecimalField("Monthly Allotment:", validators=[DataRequired()])
     date_effective = DateField("Date Effective: ", validators=[DataRequired()])
-    submit = SubmitField('Add')
+    submit1 = SubmitField('Add')
 
 
 class DefaultsViewingForm(FlaskForm):
     expenditure_type = SelectField('Expenditure Type', choices=[])
-    submit = SubmitField('Submit')
+    submit2 = SubmitField('Submit')
+
+
+class DefaultsDeletionForm(FlaskForm):
+    expenditure_type = SelectField('Expenditure Type', choices=[])
+    submit3 = SubmitField('Submit')
 
 
 class ExpenditureEntryForm(FlaskForm):
@@ -240,7 +245,7 @@ def defaults():
     session['expenditure_type'] = []
     form = DefaultsEntryForm()
     form2 = DefaultsViewingForm()
-    form3 = DefaultsViewingForm()
+    form3 = DefaultsDeletionForm()
 
     amount = ''
 
@@ -253,7 +258,7 @@ def defaults():
     form2.expenditure_type.choices = exp_type
     form3.expenditure_type.choices = exp_type
 
-    if form.validate_on_submit():
+    if form.submit1.data and form.validate():
         expenditure_type = ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first()
         print(ExpenditureType.query.filter_by(expenditure_type=form.expenditure_type.data).first())
         # expenditure_type_list = session['expenditure_type']
@@ -278,7 +283,8 @@ def defaults():
             # flash('Looks like you have Defaults cuck!')
         return redirect(url_for('defaults'))
 
-    if form2.validate_on_submit():
+
+    if form2.submit2.data and form2.validate():
         exp1 = ExpenditureType.query.with_entities(ExpenditureType.expenditure_type,
                                                    ExpenditureType.max_amount)
         max_amount = 0
@@ -289,12 +295,13 @@ def defaults():
 
         amount = max_amount
 
-    if form3.validate_on_submit():
+    if form3.submit3.data and form3.validate_on_submit():
         exp_type = form3.expenditure_type.data
 
         ExpenditureType.query.filter_by(expenditure_type=exp_type).delete()
 
         db.session.commit()
+
 
     return render_template('defaults.html',
                            form=form,
