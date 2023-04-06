@@ -29,26 +29,12 @@ def extract_list(generator, value):
     return output
 
 
-def extract_expenditure_history(ExpenditureAmount, type, year, month):
+def extract_expenditure_history(db, ExpenditureAmount, type, year, month):
     import pandas as pd
 
-    exp = ExpenditureAmount.query.filter_by(type=type).filter(ExpenditureAmount.year == year,
-                                                              ExpenditureAmount.month == month)
-    # duh this wont work have to make a full date column
+    exp = ExpenditureAmount.query.filter_by(type=type, year=year, month=month)
 
-    type = extract_list(exp,'type')
-    description = extract_list(exp, 'description')
-    amount = extract_list(exp, 'amount')
-    year = extract_list(exp, 'year')
-    month = extract_list(exp, 'month')
-    day = extract_list(exp, 'day')
-
-    df = pd.DataFrame({'type': type,
-                       'description': description,
-                       'amount': amount,
-                       'year': year,
-                       'month': month,
-                       'day': day})
+    df = pd.read_sql(exp.statement, db.session.bind)
 
     return df
 
