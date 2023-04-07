@@ -148,14 +148,16 @@ def index():
     amount = ''
     exp_hist_df = pd.DataFrame({})
     if form.validate_on_submit():
-        exp_hist_df = db_query.extract_expenditure_history(ExpenditureAmount=ExpenditureAmount,
+        exp_hist_df = db_query.extract_expenditure_history(db=db,
+                                                           ExpenditureAmount=ExpenditureAmount,
                                                            type=form.expenditure_type.data,
                                                            year=datetime.now().year,
                                                            month=datetime.now().month)
 
-        amount = db_query.budget_remaining(ExpenditureType=ExpenditureType,
-                                           ExpenditureAmount=ExpenditureAmount,
-                                           type=form.expenditure_type.data)
+        # amount = db_query.budget_remaining(ExpenditureType=ExpenditureType,
+        #                                    ExpenditureAmount=ExpenditureAmount,
+        #                                    type=form.expenditure_type.data)
+        amount = 0
 
     sample_table = pd.DataFrame({'cool': [1, 2, 3], 'not cool': ['a', 'b', 'abc']})
 
