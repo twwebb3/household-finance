@@ -39,43 +39,34 @@ def extract_expenditure_history(db, ExpenditureAmount, type, year, month):
     return df
 
 
-def extract_total_expenditure_history(ExpenditureAmount, type, year):
+def extract_total_expenditure_history(db, ExpenditureAmount, type, year):
     import pandas as pd
 
-    exp = ExpenditureAmount.query.filter_by(type=type).filter(ExpenditureAmount.year >= year)
+    exp = ExpenditureAmount.query.filter_by(type=type) # .filter(ExpenditureAmount.year >= year)
     # duh this wont work have to make a full date column
 
-    type = extract_list(exp,'type')
-    description = extract_list(exp, 'description')
-    amount = extract_list(exp, 'amount')
-    year = extract_list(exp, 'year')
-    month = extract_list(exp, 'month')
-    day = extract_list(exp, 'day')
-
-    df = pd.DataFrame({'type': type,
-                       'description': description,
-                       'amount': amount,
-                       'year': year,
-                       'month': month,
-                       'day': day})
+    df = pd.read_sql(exp.statement, db.session.bind)
 
     return df
 
 
-def budget_remaining(ExpenditureType, ExpenditureAmount, type):
+def budget_remaining(db, ExpenditureType, ExpenditureAmount, type):
     """
     calculates budget remaining for different budget items.
     """
     from datetime import datetime
+    import pandas as pd
 
     start_date = datetime(2020, 9, 1)
     end_date = datetime.now()
     num_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
 
     budget = ExpenditureType.query.filter_by(expenditure_type=type)
-    budget_amt = extract(budget, 'max_amount')
+    budget_df = pd.read_sql(budget.statement, db.session.bind)
+    budget_amt = budget_df.max_amount[0]
     if type in ('Mallory Personal Budget', 'TW Personal Budget'):
-        exp_hist_df = extract_total_expenditure_history(ExpenditureAmount=ExpenditureAmount,
+        exp_hist_df = extract_total_expenditure_history(db=db,
+                                                        ExpenditureAmount=ExpenditureAmount,
                                                         type=type,
                                                         year=2020)
 
@@ -86,7 +77,9 @@ def budget_remaining(ExpenditureType, ExpenditureAmount, type):
                                                 year=datetime.now().year,
                                                 month=datetime.now().month)
 
-        exp_amount = extract(exp, 'amount')
+        df = pd.read_sql(exp.statement, db.session.bind)
+
+        exp_amount = df.amount.sum()
 
     amount = budget_amt - exp_amount
 
