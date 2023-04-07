@@ -154,10 +154,10 @@ def index():
                                                            year=datetime.now().year,
                                                            month=datetime.now().month)
 
-        # amount = db_query.budget_remaining(ExpenditureType=ExpenditureType,
-        #                                    ExpenditureAmount=ExpenditureAmount,
-        #                                    type=form.expenditure_type.data)
-        amount = 0
+        amount = db_query.budget_remaining(db=db,
+                                           ExpenditureType=ExpenditureType,
+                                           ExpenditureAmount=ExpenditureAmount,
+                                           type=form.expenditure_type.data)
 
     sample_table = pd.DataFrame({'cool': [1, 2, 3], 'not cool': ['a', 'b', 'abc']})
 
@@ -188,10 +188,10 @@ def history():
                                                            year = form.year.data,
                                                            month = form.month.data)
 
-        # amount = db_query.budget_remaining(ExpenditureType=ExpenditureType,
-        #                                    ExpenditureAmount=ExpenditureAmount,
-        #                                    type=form.expenditure_type.data)
-        amount=0
+        amount = db_query.budget_remaining(db=db,
+                                           ExpenditureType=ExpenditureType,
+                                           ExpenditureAmount=ExpenditureAmount,
+                                           type=form.expenditure_type.data)
 
     sample_table = pd.DataFrame({'cool': [1, 2, 3], 'not cool': ['a', 'b', 'abc']})
 
