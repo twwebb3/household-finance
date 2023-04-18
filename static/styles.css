@@ -1,0 +1,25 @@
+/* styles.css */
+.data {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: Arial, sans-serif;
+}
+
+.data th, .data td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.data th {
+    background-color: #f2f2f2;
+    color: black;
+}
+
+.data tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.data tr:hover {
+    background-color: #ddd;
+}
