@@ -164,7 +164,7 @@ def index():
     return render_template('index.html',
                            form=form,
                            amount=amount,
-                           tables=[exp_hist_df.to_html(classes='data')])
+                           tables=[exp_hist_df.to_html(classes='data', index=False)])
 
 
 @app.route('/expenditure_history', methods=['GET', 'POST'])
@@ -200,7 +200,7 @@ def history():
                            form=form,
                            amount=amount,
                            table_name="Historic Expenditures",
-                           tables=[exp_hist_df.to_html(classes='data')],
+                           tables=[exp_hist_df.to_html(classes='data', index=False)],
                            titles=sample_table.columns.values)
 
 
