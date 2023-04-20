@@ -28,6 +28,13 @@
                 <li><a href="/expenditure_history">Expenditure History</a></li>
                 <li><a href="/analytics">Analytics</a></li>
                 <li><a href="/defaults">Defaults</a></li>
+
+                {% if current_user.is_authenticated %}
+                <li><a href="/logout">Logout</a></li>
+                {% else %}
+                <li><a href="/login">Login</a></li>
+                {% endif %}
+
             </ul>
         </div>
     </div>
