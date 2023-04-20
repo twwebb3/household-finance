@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from datetime import datetime
-from flask import Flask, flash, render_template, session, redirect, url_for, jsonify
+from flask import Flask, flash, render_template, session, redirect, url_for, jsonify, request
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
@@ -10,12 +10,16 @@ from wtforms import StringField, SubmitField, DecimalField, FieldList, FormField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+
 
 from data import db_query
+from models import User, get_user, authenticate
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
+app.secret_key = 'hard to guess string'
 app.config['SECRET_KEY'] = 'hard to guess string'
 app.config['SQLALCHEMY_DATABASE_URI']=\
     'sqlite:///' + os.path.join(basedir, 'data.sqlite')
@@ -25,6 +29,15 @@ bootstrap = Bootstrap(app)
 moment = Moment(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'  # Set the name of the login view function
+
+@login_manager.user_loader
+def load_user(user_id):
+    return get_user(user_id)
 
 
 # add db for defaults
@@ -123,6 +136,26 @@ class DefaultsForm(FlaskForm):
     expDefaults = FieldList(FormField(DefaultsEntryForm), min_entries=1)
 
 
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        user = authenticate(username, password)
+
+        if user is not None:
+            login_user(user)
+            return redirect(url_for("index"))
+        else:
+            flash("Invalid username or password")
+
+    return render_template("login.html")
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -134,6 +167,7 @@ def internal_server_error(e):
 
 
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 def index():
     form = BudgetRemainingForm()
 
@@ -168,6 +202,7 @@ def index():
 
 
 @app.route('/expenditure_history', methods=['GET', 'POST'])
+@login_required
 def history():
     form = BudgetHistoricRemainingForm()
 
@@ -205,6 +240,7 @@ def history():
 
 
 @app.route('/expenditure_entry', methods=['GET', 'POST'])
+@login_required
 def entry():
     form = ExpenditureEntryForm()
 
@@ -233,6 +269,7 @@ def entry():
 
 
 @app.route('/analytics', methods=['GET', 'POST'])
+@login_required
 def analytics():
     form = NameForm()
     if form.validate_on_submit():
@@ -244,6 +281,7 @@ def analytics():
 
 
 @app.route('/defaults', methods=['GET', 'POST'])
+@login_required
 def defaults():
     # if 'expenditure_type' not in session:
     session['expenditure_type'] = []
@@ -312,3 +350,11 @@ def defaults():
                            form2=form2,
                            form3=form3,
                            expenditure_amount=amount)
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("login"))
+
