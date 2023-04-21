@@ -1,11 +1,13 @@
 # models.py
 from flask_login import UserMixin
 
+
 class User(UserMixin):
-    def __init__(self, id, username, password):
-        self.id = id
-        self.username = username
-        self.password = password
+    def __init__(self, id_=None, username=None, password=None):
+        self.id = id_ or 1
+        self.username = username or 'admin'
+        self.password = password or 'password'
+
 
 # Sample users (replace this with your own user storage mechanism)
 users = [
