@@ -12,6 +12,14 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
+from forms.budget_remaining import BudgetRemainingForm
+from forms.budget_historic_remaining import BudgetHistoricRemainingForm
+from forms.defaults import DefaultsForm
+from forms.defaults_deletion import DefaultsDeletionForm
+from forms.defaults_entry import DefaultsEntryForm
+from forms.defaults_viewing import DefaultsViewingForm
+from forms.expenditure_entry import ExpenditureEntryForm
+
 
 from data import db_query
 from models import User, get_user, authenticate
@@ -87,54 +95,7 @@ class NameForm(FlaskForm):
     submit = SubmitField('Submit')
 
 
-class BudgetRemainingForm(FlaskForm):
-    expenditure_type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
-    submit = SubmitField('Submit')
 
-
-class BudgetHistoricRemainingForm(FlaskForm):
-    expenditure_type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
-    year = SelectField('Year:',
-                       choices=[year for year in range(datetime.now().year-1, datetime.now().year+2)],
-                       default=datetime.now().year)
-    month = SelectField('Month:',
-                        choices=[month for month in range(1, 13)],
-                        default=datetime.now().month)
-    submit = SubmitField('Submit')
-
-
-class DefaultsEntryForm(FlaskForm):
-    expenditure_type = StringField('Expenditure Type:', validators=[DataRequired()])
-    max_amount = DecimalField("Monthly Allotment:", validators=[DataRequired()])
-    date_effective = DateField("Date Effective: ", validators=[DataRequired()])
-    submit1 = SubmitField('Add')
-
-
-class DefaultsViewingForm(FlaskForm):
-    expenditure_type = SelectField('Expenditure Type', choices=[])
-    submit2 = SubmitField('Submit')
-
-
-class DefaultsDeletionForm(FlaskForm):
-    expenditure_type = SelectField('Expenditure Type', choices=[])
-    submit3 = SubmitField('Submit')
-
-
-class ExpenditureEntryForm(FlaskForm):
-    type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
-    store = StringField('Store:', validators=[DataRequired()])
-    description = StringField('Description:', validators=[DataRequired()])
-    amount = DecimalField('Amount:', validators=[DataRequired()])
-    year = IntegerField('Year:', validators=[DataRequired()], default=datetime.now().year)
-    month = IntegerField('Month:', validators=[DataRequired()], default=datetime.now().month)
-    day = IntegerField('Day:', validators=[DataRequired()], default=datetime.now().day)
-    submit = SubmitField('Submit')
-
-# add db references in forms
-
-
-class DefaultsForm(FlaskForm):
-    expDefaults = FieldList(FormField(DefaultsEntryForm), min_entries=1)
 
 
 
