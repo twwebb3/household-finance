@@ -23,3 +23,22 @@
 .data tr:hover {
     background-color: #ddd;
 }
+
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.login-container .form-control {
+    width: 100%;
+}
+
+.centered-form {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.centered-form h1 {
+  text-align: center;
+}
