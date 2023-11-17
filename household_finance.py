@@ -44,6 +44,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'  # Set the name of the login view function
 
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User()
@@ -322,3 +323,6 @@ def logout():
     logout_user()
     return redirect(url_for("login"))
 
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
