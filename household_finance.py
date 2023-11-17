@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from datetime import datetime
-from flask import Flask, flash, render_template, session, redirect, url_for, jsonify
+from flask import Flask, flash, render_template, session, redirect, url_for, jsonify, request
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
@@ -10,12 +10,24 @@ from wtforms import StringField, SubmitField, DecimalField, FieldList, FormField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+
+from forms.budget_remaining import BudgetRemainingForm
+from forms.budget_historic_remaining import BudgetHistoricRemainingForm
+from forms.defaults import DefaultsForm
+from forms.defaults_deletion import DefaultsDeletionForm
+from forms.defaults_entry import DefaultsEntryForm
+from forms.defaults_viewing import DefaultsViewingForm
+from forms.expenditure_entry import ExpenditureEntryForm
+
 
 from data import db_query
+from models import User, get_user, authenticate
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
+app.secret_key = 'hard to guess string'
 app.config['SECRET_KEY'] = 'hard to guess string'
 app.config['SQLALCHEMY_DATABASE_URI']=\
     'sqlite:///' + os.path.join(basedir, 'data.sqlite')
@@ -25,6 +37,17 @@ bootstrap = Bootstrap(app)
 moment = Moment(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'  # Set the name of the login view function
+
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User()
 
 
 # add db for defaults
@@ -73,54 +96,29 @@ class NameForm(FlaskForm):
     submit = SubmitField('Submit')
 
 
-class BudgetRemainingForm(FlaskForm):
-    expenditure_type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
-    submit = SubmitField('Submit')
 
 
-class BudgetHistoricRemainingForm(FlaskForm):
-    expenditure_type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
-    year = SelectField('Year:',
-                       choices=[year for year in range(datetime.now().year-1, datetime.now().year+2)],
-                       default=datetime.now().year)
-    month = SelectField('Month:',
-                        choices=[month for month in range(1, 13)],
-                        default=datetime.now().month)
-    submit = SubmitField('Submit')
 
 
-class DefaultsEntryForm(FlaskForm):
-    expenditure_type = StringField('Expenditure Type:', validators=[DataRequired()])
-    max_amount = DecimalField("Monthly Allotment:", validators=[DataRequired()])
-    date_effective = DateField("Date Effective: ", validators=[DataRequired()])
-    submit1 = SubmitField('Add')
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        remember = 'remember' in request.form
 
+        # Get the hard-coded credentials from User class
+        user = User()
+        if user.username == username and user.password == password:
+            login_user(user)
+            print('login successful')
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('entry'))
+        else:
+            flash('Invalid username or password')
 
-class DefaultsViewingForm(FlaskForm):
-    expenditure_type = SelectField('Expenditure Type', choices=[])
-    submit2 = SubmitField('Submit')
+    return render_template('login.html')
 
-
-class DefaultsDeletionForm(FlaskForm):
-    expenditure_type = SelectField('Expenditure Type', choices=[])
-    submit3 = SubmitField('Submit')
-
-
-class ExpenditureEntryForm(FlaskForm):
-    type = SelectField('Expenditure Type:', choices=['Mallory Personal Budget', 'TW Personal Budget'])
-    store = StringField('Store:', validators=[DataRequired()])
-    description = StringField('Description:', validators=[DataRequired()])
-    amount = DecimalField('Amount:', validators=[DataRequired()])
-    year = IntegerField('Year:', validators=[DataRequired()], default=datetime.now().year)
-    month = IntegerField('Month:', validators=[DataRequired()], default=datetime.now().month)
-    day = IntegerField('Day:', validators=[DataRequired()], default=datetime.now().day)
-    submit = SubmitField('Submit')
-
-# add db references in forms
-
-
-class DefaultsForm(FlaskForm):
-    expDefaults = FieldList(FormField(DefaultsEntryForm), min_entries=1)
 
 
 @app.errorhandler(404)
@@ -134,6 +132,7 @@ def internal_server_error(e):
 
 
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 def index():
     form = BudgetRemainingForm()
 
@@ -168,6 +167,7 @@ def index():
 
 
 @app.route('/expenditure_history', methods=['GET', 'POST'])
+@login_required
 def history():
     form = BudgetHistoricRemainingForm()
 
@@ -205,6 +205,7 @@ def history():
 
 
 @app.route('/expenditure_entry', methods=['GET', 'POST'])
+@login_required
 def entry():
     form = ExpenditureEntryForm()
 
@@ -233,6 +234,7 @@ def entry():
 
 
 @app.route('/analytics', methods=['GET', 'POST'])
+@login_required
 def analytics():
     form = NameForm()
     if form.validate_on_submit():
@@ -244,6 +246,7 @@ def analytics():
 
 
 @app.route('/defaults', methods=['GET', 'POST'])
+@login_required
 def defaults():
     # if 'expenditure_type' not in session:
     session['expenditure_type'] = []
@@ -312,3 +315,14 @@ def defaults():
                            form2=form2,
                            form3=form3,
                            expenditure_amount=amount)
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("login"))
+
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
